@@ -1,0 +1,52 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sistema_certificados
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    volumes:
+      - mysqldata:/var/lib/mysql
+      # Montar o script DDL no diretório correto no docker dps dos ":"
+      - ./mysql/bd.sql:/docker-entrypoint-initdb.d/bd.sql 
+    ports:
+      - "3306:3306"
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - mysql
+    environment:
+      - DB_HOST=mysql-certificados
+      - DB_USER=user
+      - DB_PASSWORD=userpassword
+      - DB_DATABASE=sistema_certificados
+      - RABBITMQ_HOST=rabbitmq
+    ports:
+      - "3000:3000"
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - mysql
+      - rabbitmq
+
+volumes:
+  mysqldata:
+  rabbitmq_data:
