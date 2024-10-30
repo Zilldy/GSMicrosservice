@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 
 // Conexão com o MySQL
 const connection = mysql.createConnection({
-    host: 'mysql-certificados',
+    host: 'mysql',
     user: 'user',
     password: 'userpassword',
     database: 'sistema_certificados'
@@ -57,7 +57,7 @@ app.post('/certificado', async (req, res) => {
     } = req.body;
 
     // Salvando os dados no MySQL
-    const query = `INSERT INTO diplomas (nm_aluno, nacionalidade, estado, dt_nascimento, rg, dt_conclusao, curso, carga_horaria, dt_emissao, nm_docente, cargo_docente, arq_certificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO certificados (nm_aluno, nacionalidade, estado, dt_nascimento, rg, dt_conclusao, curso, carga_horaria, dt_emissao, nm_docente, cargo_docente, arq_certificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     connection.query(query, [
         nm_aluno,
