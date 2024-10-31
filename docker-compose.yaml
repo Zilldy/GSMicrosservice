@@ -4,6 +4,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:15672"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
@@ -16,7 +21,6 @@ services:
       MYSQL_PASSWORD: userpassword
     volumes:
       - mysqldata:/var/lib/mysql
-      # Montar o script DDL no diretório correto no docker dps dos ":"
       - ./mysql/bd.sql:/docker-entrypoint-initdb.d/bd.sql 
     ports:
       - "3306:3306"
@@ -41,11 +45,16 @@ services:
     build:
       context: ./worker
       dockerfile: Dockerfile
+    # depends_on:
+    #   rabbitmq:
+    #     condition: service_healthy
+    #   mysql:
+    #     condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
-    depends_on:
-      - mysql
-      - rabbitmq
+    command: ["node", "index.js"]
+    volumes:
+      - ./arquivos:/arquivos
 
 volumes:
   mysqldata:
