@@ -9,12 +9,15 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
+RUN npm install mysql2
+RUN npm install amqplib
+
 
 # Copy the rest of the application code
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 8080
 
 # Define the command to run the app
 CMD ["node", "index.js"]

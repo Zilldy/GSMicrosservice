@@ -4,7 +4,7 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
 // Conexão com o MySQL
 const connection = mysql.createConnection({
@@ -40,7 +40,9 @@ async function sendToQueue(message) {
 }
 
 // Endpoint para receber JSON e salvar no MySQL
-app.post('/certificado', async (req, res) => {
+app.post('/certificado', (req, res) => {
+    console.log("Bateu na api");
+    
     const {
         nm_aluno,
         nacionalidade,
@@ -79,8 +81,13 @@ app.post('/certificado', async (req, res) => {
         }
 
         // Enviar os dados para a fila RabbitMQ
-        sendToQueue(req.body);
+        // sendToQueue(req.body);
 
         res.status(201).send('Dados recebidos e processados com sucesso.');
     });
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+    console.log(`API rodando em http://localhost:${PORT}`);
 });

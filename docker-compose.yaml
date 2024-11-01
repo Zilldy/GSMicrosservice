@@ -29,13 +29,13 @@ services:
       - rabbitmq
       - mysql
     environment:
-      - DB_HOST=mysql-certificados
+      - DB_HOST=mysql
       - DB_USER=user
       - DB_PASSWORD=userpassword
       - DB_DATABASE=sistema_certificados
       - RABBITMQ_HOST=rabbitmq
     ports:
-      - "3000:3000"
+      - "8080:8080"
 
   worker:
     build:
