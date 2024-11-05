@@ -2,7 +2,6 @@ const express = require('express');
 const amqp = require('amqplib');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
-
 const app = express();
 app.use(bodyParser.json());
 
@@ -18,17 +17,25 @@ connection.connect((err) => {
     if (err) throw err;
     console.log('Conectado ao MySQL!');
 });
+setTimeout(()=>{
+    connection.connect((err) => {
+        if (err) throw err;
+        console.log('Conectado ao MySQL!');
+    });
+},5000);
 
 // Conexão RabbitMQ
 async function sendToQueue(message) {
     try {
         const connection = await amqp.connect('amqp://rabbitmq');
         const channel = await connection.createChannel();
+        
         const queue = 'certificados';
 
         await channel.assertQueue(queue, {
             durable: true
         });
+
         channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
             persistent: true
         });
@@ -83,4 +90,27 @@ app.post('/certificado', async (req, res) => {
 
         res.status(201).send('Dados recebidos e processados com sucesso.');
     });
+});
+
+// Rota para obter o certificado em HTML pelo RG
+app.get('/certificado/rg/:rg', async (req, res) => {
+    const rg = req.params.rg;
+    connection.query('SELECT arq_certificado FROM certificados WHERE rg = ?', [rg], (err, results) => {
+        if (err) {
+            console.error("Erro ao buscar certificado:", err);
+            return res.status(500).send('Erro ao buscar certificado');
+        }
+
+        if (results.length > 0) {
+            res.send(results[0].arq_certificado);
+        } else {
+            res.status(404).send('Certificado não encontrado');
+        }
+    });
+});
+
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+    console.log(`API rodando em http://localhost:${PORT}`);
 });
