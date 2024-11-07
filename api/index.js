@@ -13,10 +13,6 @@ const connection = mysql.createConnection({
     database: 'sistema_certificados'
 });
 
-connection.connect((err) => {
-    if (err) throw err;
-    console.log('Conectado ao MySQL!');
-});
 setTimeout(()=>{
     connection.connect((err) => {
         if (err) throw err;
@@ -88,14 +84,17 @@ app.post('/certificado', async (req, res) => {
         // Enviar os dados para a fila RabbitMQ
         sendToQueue(req.body);
 
-        res.status(201).send('Dados recebidos e processados com sucesso.');
+        res.status(201).json({
+            message: 'Dados recebidos e processados com sucesso.',
+            certificado_id: result.insertId
+        });
     });
 });
 
 // Rota para obter o certificado em HTML pelo RG
-app.get('/certificado/rg/:rg', async (req, res) => {
-    const rg = req.params.rg;
-    connection.query('SELECT arq_certificado FROM certificados WHERE rg = ?', [rg], (err, results) => {
+app.get('/certificado/id/:id', async (req, res) => {
+    const id = req.params.id;
+    connection.query('SELECT arq_certificado FROM certificados WHERE certificado_id = ?', [id], (err, results) => {
         if (err) {
             console.error("Erro ao buscar certificado:", err);
             return res.status(500).send('Erro ao buscar certificado');
