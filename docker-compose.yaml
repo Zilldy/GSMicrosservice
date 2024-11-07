@@ -15,11 +15,22 @@ services:
       MYSQL_USER: user
       MYSQL_PASSWORD: userpassword
     volumes:
-      - mysqldata:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
       # Montar o script DDL no diretório correto no docker dps dos ":"
       - ./mysql/bd.sql:/docker-entrypoint-initdb.d/bd.sql 
     ports:
       - "3306:3306"
+
+  puppeteer:
+    image: 'node:14'  # ou qualquer outra imagem que você esteja usando
+    working_dir: /worker
+    volumes:
+      - ./worker:/worker  # se você tem a aplicação local em ./app
+      - puppeteer_data:/var/lib/puppeteer  # volume para cache do Puppeteer
+    #command: node ./pdfGenerate.js  # ou o comando que você vai rodar para usar o Puppeteer
+    environment:
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium  # caminho do Chromium, se necessário
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true  # se você não quer que o Puppeteer baixe o Chromium
 
   api:
     build:
@@ -36,6 +47,8 @@ services:
       - RABBITMQ_HOST=rabbitmq
     ports:
       - "8080:8080"
+    volumes:
+      - ./arquivos:/arquivos
 
   worker:
     build:
@@ -48,5 +61,6 @@ services:
       - rabbitmq
 
 volumes:
-  mysqldata:
+  mysql_data:
   rabbitmq_data:
+  puppeteer_data:

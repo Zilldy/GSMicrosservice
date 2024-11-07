@@ -1,17 +1,35 @@
-# Use the official Node.js image from the Docker Hub
+# Use a imagem oficial do Node.js
 FROM node:14
 
-# Create and change to the app directory
+# Instalar as dependências para o Puppeteer (Chromium)
+RUN apt-get update && apt-get install -y \
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Definir o diretório de trabalho
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copiar package.json e package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Instalar as dependências
 RUN npm install
+RUN npm install amqplib
+RUN npm install handlebars
+RUN npm install mysql2
 
-# Copy the rest of the application code
+# Copiar o restante do código da aplicação
 COPY . .
 
-# Define the command to run the app
+# Definir o comando para rodar a aplicação
 CMD ["node", "index.js"]

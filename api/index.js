@@ -2,9 +2,8 @@ const express = require('express');
 const amqp = require('amqplib');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
-
 const app = express();
-app.use(express.json());
+app.use(bodyParser.json());
 
 // Conexão com o MySQL
 const connection = mysql.createConnection({
@@ -14,21 +13,25 @@ const connection = mysql.createConnection({
     database: 'sistema_certificados'
 });
 
-connection.connect((err) => {
-    if (err) throw err;
-    console.log('Conectado ao MySQL!');
-});
+setTimeout(()=>{
+    connection.connect((err) => {
+        if (err) throw err;
+        console.log('Conectado ao MySQL!');
+    });
+},5000);
 
 // Conexão RabbitMQ
 async function sendToQueue(message) {
     try {
         const connection = await amqp.connect('amqp://rabbitmq');
         const channel = await connection.createChannel();
+        
         const queue = 'certificados';
 
         await channel.assertQueue(queue, {
             durable: true
         });
+
         channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
             persistent: true
         });
@@ -40,9 +43,7 @@ async function sendToQueue(message) {
 }
 
 // Endpoint para receber JSON e salvar no MySQL
-app.post('/certificado', (req, res) => {
-    console.log("Bateu na api");
-    
+app.post('/certificado', async (req, res) => {
     const {
         nm_aluno,
         nacionalidade,
@@ -81,9 +82,29 @@ app.post('/certificado', (req, res) => {
         }
 
         // Enviar os dados para a fila RabbitMQ
-        // sendToQueue(req.body);
+        sendToQueue(req.body);
 
-        res.status(201).send('Dados recebidos e processados com sucesso.');
+        res.status(201).json({
+            message: 'Dados recebidos e processados com sucesso.',
+            certificado_id: result.insertId
+        });
+    });
+});
+
+// Rota para obter o certificado em HTML pelo RG
+app.get('/certificado/id/:id', async (req, res) => {
+    const id = req.params.id;
+    connection.query('SELECT arq_certificado FROM certificados WHERE certificado_id = ?', [id], (err, results) => {
+        if (err) {
+            console.error("Erro ao buscar certificado:", err);
+            return res.status(500).send('Erro ao buscar certificado');
+        }
+
+        if (results.length > 0) {
+            res.send(results[0].arq_certificado);
+        } else {
+            res.status(404).send('Certificado não encontrado');
+        }
     });
 });
 

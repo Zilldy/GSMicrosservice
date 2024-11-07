@@ -9,9 +9,6 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
-RUN npm install mysql2
-RUN npm install amqplib
-
 
 # Copy the rest of the application code
 COPY . .
