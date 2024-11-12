@@ -3,6 +3,7 @@ const fs = require('fs');
 const Handlebars = require('handlebars');
 const path = require('path');
 const mysql = require('mysql2');
+const htmlToPdf = require('./pdfGenerate');
 
 const queue = 'certificados';
 const connection = mysql.createConnection({
@@ -48,11 +49,14 @@ amqp.connect('amqp://rabbitmq', function (error0, connection) {
                 // Gera o conteúdo do certificado
                 const templateContent = await generateCertificate(dados);
 
+                const path = await htmlToPdf(templateContent);
+                console.log(path);
+                
                 // Atualiza o banco de dados
-                await updateDatabase(dados.rg, templateContent);
+                await updateDatabase(dados.id, path);
 
                 console.log(`Certificado atualizado com sucesso no banco de dados para o aluno ${dados.nm_aluno}`);
-                console.log(`Visualize o certificado em: http://localhost:8080/certificado/rg/${dados.rg}`);
+                console.log(`Visualize o certificado em: http://localhost:8080/certificado/id/${dados.id}`);
                 
 
                 // Confirma a mensagem após o processamento
@@ -89,11 +93,11 @@ function generateCertificate(data) {
     });
 }
 
-async function updateDatabase(rg, arq_certificado) {
+async function updateDatabase(id, arq_certificado) {
 
     return new Promise((resolve, reject) => {
-        const query = 'UPDATE certificados SET arq_certificado = ? WHERE rg = ?';
-        connection.query(query, [arq_certificado, rg], (err, results) => {
+        const query = 'UPDATE certificados SET arq_certificado = ? WHERE certificado_id = ?';
+        connection.query(query, [arq_certificado, id], (err, results) => {
             if (err) {
                 console.error("Erro ao atualizar o banco de dados:", err);
                 return reject(err);

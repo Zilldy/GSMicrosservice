@@ -21,7 +21,7 @@ setTimeout(()=>{
 },5000);
 
 // Conexão RabbitMQ
-async function sendToQueue(message) {
+async function sendToQueue(message, id) {
     try {
         const connection = await amqp.connect('amqp://rabbitmq');
         const channel = await connection.createChannel();
@@ -32,11 +32,16 @@ async function sendToQueue(message) {
             durable: true
         });
 
-        channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+        // Adiciona o campo 'id' ao objeto da mensagem
+        const messageWithId = { ...message, id };
+        console.log("OBJETO DA MSG DO RABBIT", messageWithId);
+        
+
+        channel.sendToQueue(queue, Buffer.from(JSON.stringify(messageWithId)), {
             persistent: true
         });
 
-        console.log("Mensagem enviada para fila:", message);
+        console.log("Mensagem enviada para fila:", messageWithId);
     } catch (error) {
         console.error("Erro ao enviar mensagem para fila:", error);
     }
@@ -80,14 +85,14 @@ app.post('/certificado', async (req, res) => {
             console.error("Erro ao salvar no MySQL:", err);
             return res.status(500).send('Erro ao salvar no banco de dados.');
         }
-
-        // Enviar os dados para a fila RabbitMQ
-        sendToQueue(req.body);
-
         res.status(201).json({
             message: 'Dados recebidos e processados com sucesso.',
             certificado_id: result.insertId
         });
+        
+        // Enviar os dados para a fila RabbitMQ
+        sendToQueue(req.body, result.insertId);
+
     });
 });
 
@@ -101,7 +106,10 @@ app.get('/certificado/id/:id', async (req, res) => {
         }
 
         if (results.length > 0) {
-            res.send(results[0].arq_certificado);
+            // res.send(results[0].arq_certificado);
+            console.log(__dirname);
+            
+            res.sendFile(results[0].arq_certificado);
         } else {
             res.status(404).send('Certificado não encontrado');
         }

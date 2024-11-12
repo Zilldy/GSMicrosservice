@@ -14,5 +14,5 @@ CREATE TABLE IF NOT EXISTS certificados (
     dt_emissao DATE,
     nm_docente VARCHAR(255),
     cargo_docente VARCHAR(255),
-    arq_certificado TEXT
+    arq_certificado VARCHAR(255)
 );
