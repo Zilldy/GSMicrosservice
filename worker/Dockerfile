@@ -15,11 +15,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install dependencies
 RUN npm install
-RUN npm install amqplib
-RUN npm install handlebars
-RUN npm install mysql2
-RUN npm install puppeteer
-RUN npm install uuid
+RUN npm install amqplib handlebars mysql2 puppeteer uuid
 
 # Definir a variável de ambiente do Puppeteer para usar o Chromium instalado
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium

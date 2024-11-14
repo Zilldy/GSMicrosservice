@@ -32,12 +32,14 @@ services:
     depends_on:
       - rabbitmq
       - mysql
+      - redis
     environment:
       - DB_HOST=mysql
       - DB_USER=user
       - DB_PASSWORD=userpassword
       - DB_DATABASE=sistema_certificados
       - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis
     ports:
       - "8080:8080"
     volumes:
@@ -57,6 +59,19 @@ services:
     command: ["node", "index.js"]
     volumes:
       - ./arquivos:/arquivos
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    environment:
+      - REDISINSIGHT_AUTH_USERNAME=admin
+      - REDISINSIGHT_AUTH_PASSWORD=admin123
 
 volumes:
   mysqldata:

@@ -3,6 +3,8 @@ const amqp = require('amqplib');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const app = express();
+const redis = require('redis');
+
 app.use(bodyParser.json());
 
 // Conexão com o MySQL
@@ -16,9 +18,27 @@ const connection = mysql.createConnection({
 setTimeout(()=>{
     connection.connect((err) => {
         if (err) throw err;
-        console.log('Conectado ao MySQL!');
+        console.log(' ********** CONECTADO AO MYSQL **********');
     });
 },5000);
+
+const client = redis.createClient({
+    socket: {
+        host: process.env.REDIS_HOST,
+        port: 6379                                   
+    }
+});
+
+client.on('error', (err) => {
+    console.error("Erro ao conectar ao Redis:", err);
+});
+
+// Conecta ao Redis
+client.connect().then(() => {
+    console.log("********** CONECTADO AO REDIS **********");
+}).catch((err) => {
+    console.error("Falha na conexão:", err);
+});
 
 // Conexão RabbitMQ
 async function sendToQueue(message, id) {
@@ -99,21 +119,43 @@ app.post('/certificado', async (req, res) => {
 // Rota para obter o certificado em HTML pelo RG
 app.get('/certificado/id/:id', async (req, res) => {
     const id = req.params.id;
-    connection.query('SELECT arq_certificado FROM certificados WHERE certificado_id = ?', [id], (err, results) => {
-        if (err) {
-            console.error("Erro ao buscar certificado:", err);
-            return res.status(500).send('Erro ao buscar certificado');
-        }
+    
+    try {
+        console.log("/certificado request begin");
+        const key = "certificado_id";
 
-        if (results.length > 0) {
-            // res.send(results[0].arq_certificado);
-            console.log(__dirname);
-            
-            res.sendFile(results[0].arq_certificado);
-        } else {
-            res.status(404).send('Certificado não encontrado');
+        const certificados = await client.get(key);
+        console.log("********** LENDO REDIS **********");
+        console.log("CERTIFICADOS", certificados);
+
+        if (certificados) {
+            const jsonCertificados = JSON.parse(certificados);
+            console.log("JSON", jsonCertificados);
+            console.log("PATH: ", jsonCertificados.arq_certificado);
+            return res.sendFile(jsonCertificados.arq_certificado);
         }
-    });
+        
+        connection.query('SELECT arq_certificado FROM certificados WHERE certificado_id = ?', [id], async (err, results) => {
+            if (err) {
+                console.error("Erro ao buscar certificado:", err);
+                return res.status(500).send('Erro ao buscar certificado');
+            }
+    
+            if (results.length > 0) {
+                // res.send(results[0].arq_certificado);
+                console.log(__dirname);
+                const dbCertificados = JSON.stringify(results[0])
+                await client.setEx(key, 3600, dbCertificados);
+
+                res.sendFile(results[0].arq_certificado);
+            } else {
+                res.status(404).send('Certificado não encontrado');
+            }
+        });
+    } catch (error) {
+        console.log("Erro ao acessar o cache ou banco de dados",error);
+        res.status(500).send("Erro interno");
+    }
 });
 
 
