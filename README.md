@@ -13,9 +13,13 @@ Guilherme Cardoso Barreiro - RM 94726
 3. Envie o seguinte cURL no Postman
 
 3.1. POST /certificado HTTP/1.1
+
 Host: localhost:8080
+
 Content-Type: application/json
+
 Content-Length: 374
+
 {
     "nm_aluno": "Jose Romualdo",
     "nacionalidade": "BR",
@@ -34,4 +38,6 @@ Content-Length: 374
 4. E para visulizar o certificado rode o seguinte cURL
 
 4.1. GET /certificado/id/1 HTTP/1.1
+
 Host: localhost:8080
+
